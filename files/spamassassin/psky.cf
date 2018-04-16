@@ -1,0 +1,6 @@
+# PSKY BAD
+urirhssub PSKY_BAD bad.psky.me. A 2
+body PSKY_BAD eval:check_uridnsbl('PSKY_BAD')
+describe PSKY_BAD Contains a domain registered in psky_bad
+tflags PSKY_BAD net
+score PSKY_BAD 0.5

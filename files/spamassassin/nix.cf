@@ -1,0 +1,4 @@
+header    RCVD_IN_NIX_SPAM  eval:check_rbl('nix-spam-lastexternal','ix.dnsbl.manitu.net.')
+describe  RCVD_IN_NIX_SPAM  Listed in NIX-SPAM DNSBL (heise.de)
+tflags    RCVD_IN_NIX_SPAM  net
+score     RCVD_IN_NIX_SPAM  5 # please adjust the score value

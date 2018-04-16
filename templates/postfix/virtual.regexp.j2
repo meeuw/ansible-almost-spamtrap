@@ -1,0 +1,9 @@
+if !/{{ hostname }}$/
+{% for item in almost_spamtrap_mailboxes %}
+{% if loop.last %}
+/.*/ {{ item.user }}
+{% else %}
+/{{ item.email }}/ {{ item.user }}
+{% endif %}
+{% endfor %}
+endif

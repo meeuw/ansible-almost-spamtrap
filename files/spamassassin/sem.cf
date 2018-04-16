@@ -1,0 +1,32 @@
+# SEM-BACKSCATTER
+header RCVD_IN_SEMBACKSCATTER eval:check_rbl('sembackscatter-lastexternal', 'backscatter.spameatingmonkey.net')
+tflags RCVD_IN_SEMBACKSCATTER net
+describe RCVD_IN_SEMBACKSCATTER Received from an IP listed by SEM-BACKSCATTER
+score RCVD_IN_SEMBACKSCATTER 0.5
+
+# SEM-BLACK
+header RCVD_IN_SEMBLACK eval:check_rbl('semblack-lastexternal', 'bl.spameatingmonkey.net')
+tflags RCVD_IN_SEMBLACK net
+describe RCVD_IN_SEMBLACK Received from an IP listed by SEM-BLACK
+score RCVD_IN_SEMBLACK 5
+
+# SEM-URI
+urirhssub SEM_URI uribl.spameatingmonkey.net. A 2
+body SEM_URI eval:check_uridnsbl('SEM_URI')
+describe SEM_URI Contains a URI listed by SEM-URI
+tflags SEM_URI net
+score SEM_URI 0.5
+
+# SEM-URIRED
+urirhssub SEM_URIRED urired.spameatingmonkey.net. A 2
+body SEM_URIRED eval:check_uridnsbl('SEM_URIRED')
+describe SEM_URIRED Contains a URI listed by SEM-URIRED
+tflags SEM_URIRED net
+score SEM_URIRED 0.5
+
+# SEM-FRESH
+urirhssub SEM_FRESH fresh.spameatingmonkey.net. A 2
+body SEM_FRESH eval:check_uridnsbl('SEM_FRESH')
+describe SEM_FRESH Contains a domain registered less than 5 days ago
+tflags SEM_FRESH net
+score SEM_FRESH 0.5

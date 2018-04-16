@@ -1,0 +1,4 @@
+{% for item in almost_spamtrap_mailboxes %}
+{{ item.user }}:{{ item.email }}:{{ almost_spamtrap_smtp }}:587
+{% endfor %}
+root:{{ almost_spamtrap_email }}:{{ almost_spamtrap_smtp }}:587

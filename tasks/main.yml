@@ -1,0 +1,160 @@
+---
+- name: install packages
+  dnf: name={{item}}
+  with_items:
+    - postfix
+    - spamassassin
+    - amavisd-new
+    - dovecot
+    - dovecot-pigeonhole
+    - ssmtp
+- name: configure amavisd.conf (modifications)
+  lineinfile:
+    line: "{{ item.line }}"
+    regexp: "{{ item.regexp }}"
+    path: /etc/amavisd/amavisd.conf
+  with_items:
+    - line: "$mydomain = '{{ almost_spamtrap_domain }}'; # a convenient default for other settings"
+      regexp: '^\$mydomain ='
+    - line: "$log_level = 1;              # verbosity 0..5, -d"
+      regexp: '^\$log_level ='
+    - line: "$sa_tag_level_deflt  = 1.0;  # add spam info headers if at, or above that level"
+      regexp: '^\$sa_tag_level_deflt  ='
+    - line: "$sa_tag2_level_deflt = 5.0;  # add 'spam detected' headers at that level"
+      regexp: '^\$sa_tag2_level_deflt ='
+    - line: "$sa_kill_level_deflt = 4.0;  # triggers spam evasive actions (e.g. blocks mail)"
+      regexp: '^\$sa_kill_level_deflt ='
+    - line: "$final_banned_destiny     = D_DISCARD;"
+      regexp: '^\$final_banned_destiny     ='
+    - line: "$final_bad_header_destiny = D_DISCARD;"
+      regexp: '^\$final_bad_header_destiny ='
+- name: configure amavisd.conf (additions)
+  blockinfile:
+    insertbefore: "1;  # insure a defined return value"
+    path: /etc/amavisd/amavisd.conf
+    block: |
+      $bad_header_quarantine_to = '{{ almost_spamtrap_email }}';
+      $spam_quarantine_to = '{{ almost_spamtrap_email }}';
+- name: configure spamassassin local.cf (modifications)
+  lineinfile:
+    line: "required_hits 4"
+    regexp: "^required_hits"
+    path: /etc/mail/spamassassin/local.cf
+- name: set fact local_cf_content
+  set_fact:
+    local_cf_content: "{{ lookup('template', 'spamassassin/local.cf.j2') }}"
+- name: configure spamassassin local.cf (additions)
+  blockinfile:
+    content: '{{ local_cf_content }}'
+    path: /etc/mail/spamassassin/local.cf
+- name: spamassassin configuration files
+  copy:
+    src: "{{ item }}"
+    dest: /etc/mail/spamassassin/
+  with_fileglob:
+    - spamassassin/*
+- name: dovecot 10-mail.conf
+  lineinfile:
+    line: "mail_location = maildir:~/.maildir/"
+    insertafter: '^#mail_location ='
+    path: /etc/dovecot/conf.d/10-mail.conf
+- name: dovecot 10-ssl.conf
+  lineinfile:
+    line: "{{ item.line }}"
+    regexp: "{{ item.regexp }}"
+    path: /etc/dovecot/conf.d/10-ssl.conf
+  with_items:
+    - line: "ssl_cert = </etc/pki/tls/certs/{{ almost_spamtrap_domain }}+chain.crt"
+      regexp: '^ssl_cert = '
+    - line: "ssl_key = </etc/pki/tls/private/{{ almost_spamtrap_domain }}.key"
+      regexp: '^ssl_key = '
+- name: 15-lda.conf
+  lineinfile:
+    insertafter: '^  #mail_plugins = \$mail_plugins'
+    line: "  mail_plugins = sieve"
+    path: /etc/dovecot/conf.d/15-lda.conf
+- name: postfix main.cf (additions)
+  lineinfile:
+    line: "{{ item.line }}"
+    insertafter: "{{ item.insertafter }}"
+    path: /etc/postfix/main.cf
+  with_items:
+    - line: 'mydomain = {{ almost_spamtrap_domain }}'
+      insertafter: '^#mydomain = domain.tld$'
+    - line: "home_mailbox = .maildir/"
+      insertafter: '^#home_mailbox = Maildir/$'
+    - line: "mailbox_command = /usr/libexec/dovecot/deliver -f \"$SENDER\" -a \"$RECIPIENT\""
+      insertafter: '^#mailbox_command = /some/where/procmail -a "\$EXTENSION"$'
+- name: postfix main.cf (modifications)
+  lineinfile:
+    line: "{{ item.line }}"
+    regexp: "{{ item.regexp }}"
+    path: /etc/postfix/main.cf
+  with_items:
+    - line: "inet_interfaces = all"
+      regexp: "^inet_interfaces = "
+- name: postfix main.cf (addition block)
+  blockinfile:
+    path: /etc/postfix/main.cf
+    block: |
+      virtual_alias_maps = regexp:/etc/postfix/virtual.regexp
+      virtual_alias_domains = $virtual_alias_maps
+- name: postfix master.cf (remove defaults)
+  lineinfile:
+    path: /etc/postfix/master.cf
+    line: "smtp      inet  n       -       n       -       -       smtpd"
+    state: absent
+- name: postfix master.cf (addition block)
+  blockinfile:
+    path: /etc/postfix/master.cf
+    block: |
+      #smtp      inet  n       -       n       -       -       smtpd
+      smtp    inet    n       -       n       -       20      smtpd
+              -o smtpd_proxy_filter=127.0.0.1:10024
+              -o smtpd_client_connection_count_limit=10
+              -o smtpd_client_restrictions=$override_smtpd_client_restrictions
+      0.0.0.0:10025 inet n  -       n       -        -      smtpd
+              -o smtpd_authorized_xforward_hosts=127.0.0.0/8
+              -o smtpd_client_restrictions=
+              -o smtpd_helo_restrictions=
+              -o smtpd_sender_restrictions=
+              -o smtpd_recipient_restrictions=permit_mynetworks,reject_unauth_destination
+              -o smtpd_data_restrictions=
+              -o receive_override_options=no_unknown_recipient_checks
+    insertafter: "^# ==========================================================================$"
+- name: postfix virtual
+  template:
+    src: postfix/virtual.regexp.j2
+    dest: /etc/postfix/virtual.regexp
+- name: set fact revaliases
+  set_fact:
+    revaliases_content: "{{ lookup('template', 'ssmtp/revaliases.j2') }}"
+- name: set ssmtp revaliases
+  blockinfile:
+    path: /etc/ssmtp/revaliases
+    content: "{{ revaliases_content }}"
+- name: modify ssmtp.conf
+  lineinfile:
+    path: /etc/ssmtp/ssmtp.conf
+    line: "{{ item.line }}"
+    regexp: "{{ item.regexp }}"
+  with_items:
+    - line: "mailhub={{ almost_spamtrap_smtp }}"
+      regexp: '^mailhub='
+    - line: "FromLineOverride=YES"
+      regexp: 'FromLineOverride=YES$'
+    - line: "UseTLS=YES"
+      regexp: 'UseTLS=YES$'
+    - line: "Debug=YES"
+      regexp: 'Debug=YES$'
+- name: append block to ssmtp.conf
+  blockinfile:
+    path: /etc/ssmtp/ssmtp.conf
+    block: |
+      UseSTARTTLS=YES
+      AuthUser={{ almost_spamtrap_smtp_user }}
+      AuthPass={{ almost_spamtrap_smtp_password }}
+- name: configure ssmtp as mta
+  alternatives:
+    name: mta
+    path: /usr/sbin/sendmail.ssmtp

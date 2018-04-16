@@ -1,0 +1,4 @@
+uridnsbl URIBL_SBLXBL  sbl-xbl.spamhaus.org.   TXT
+body     URIBL_SBLXBL  eval:check_uridnsbl('URIBL_SBLXBL')
+describe URIBL_SBLXBL  Contains a URL listed in the SBL/XBL blocklist
+score    URIBL_SBLXBL  5

@@ -1,0 +1,14 @@
+header   RCVD_IN_BL_COUNTRY_VN  eval:check_rbl('Vietnam','vn.countries.nerd.dk.')
+describe RCVD_IN_BL_COUNTRY_VN  Mail client in Vietnam
+tflags   RCVD_IN_BL_COUNTRY_VN  net
+score    RCVD_IN_BL_COUNTRY_VN  5 # please adjust the score value
+
+header   RCVD_IN_BL_COUNTRY_KH  eval:check_rbl('Cambodia','kh.countries.nerd.dk.')
+describe RCVD_IN_BL_COUNTRY_KH  Mail client in Cambodia
+tflags   RCVD_IN_BL_COUNTRY_KH  net
+score    RCVD_IN_BL_COUNTRY_KH  5 # please adjust the score value
+
+header   RCVD_IN_BL_COUNTRY_BR  eval:check_rbl('Brazil','br.countries.nerd.dk.')
+describe RCVD_IN_BL_COUNTRY_BR  Mail client in Brazil
+tflags   RCVD_IN_BL_COUNTRY_BR  net
+score    RCVD_IN_BL_COUNTRY_BR  5 # please adjust the score value
