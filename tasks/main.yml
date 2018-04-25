@@ -8,6 +8,8 @@
     - dovecot
     - dovecot-pigeonhole
     - ssmtp
+    - clamav-update
+    - pyzor
 - name: configure amavisd.conf (modifications)
   lineinfile:
     line: "{{ item.line }}"
