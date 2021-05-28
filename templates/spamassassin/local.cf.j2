@@ -1,3 +1,6 @@
+required_hits 4
+report_safe 0
+rewrite_header Subject [SPAM]
 score RCVD_IN_BL_SPAMCOP_NET 0 5 0 5
 score URIBL_DBL_SPAM 0 5 0 5
 score RCVD_IN_XBL 0 5 0 5
@@ -13,9 +16,6 @@ score RCVD_IN_BRBL_LASTEXT 0 5 0 5
 score RCVD_IN_PBL 0 5 0 5
 score RCVD_IN_PSBLA 0 5 0 5
 score RCVD_IN_PSBL 0 5 0 5
-{% for item in almost_spamtrap_blacklist %}
-blacklist_from {{ item }}
-{% endfor %}
 #body BODY_RULE_1 /[::blank::]/
 #describe BODY_RULE_1 blank mail body
 #score BODY_RULE_1 0 5 0 5

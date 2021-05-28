@@ -21,9 +21,6 @@ Role Variables
       user: user1
     - email: user2.example.com
       user: user2
-    almost_spamtrap_blacklist:
-    - info@example.com
-    - spam@example.com
 
 Dependencies
 ------------

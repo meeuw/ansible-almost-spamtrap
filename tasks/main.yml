@@ -1,30 +1,30 @@
 ---
 - name: install packages
-  dnf: name={{item}}
-  with_items:
-    - postfix
-    - spamassassin
-    - amavisd-new
-    - dovecot
-    - dovecot-pigeonhole
-    - ssmtp
-    - clamav-update
-    - pyzor
+  dnf:
+    name:
+      - postfix
+      - spamassassin
+      - amavisd-new
+      - dovecot
+      - dovecot-pigeonhole
+      - ssmtp
+      - clamav-update
+      - pyzor
 - name: configure amavisd.conf (modifications)
   lineinfile:
     line: "{{ item.line }}"
     regexp: "{{ item.regexp }}"
     path: /etc/amavisd/amavisd.conf
   with_items:
-    - line: "$mydomain = '{{ almost_spamtrap_domain }}'; # a convenient default for other settings"
+    - line: "$mydomain = '{{ almost_spamtrap_domain }}';   # a convenient default for other settings"
       regexp: '^\$mydomain ='
-    - line: "$log_level = 1;              # verbosity 0..5, -d"
+    - line: "$log_level = 0;              # verbosity 0..5, -d"
       regexp: '^\$log_level ='
-    - line: "$sa_tag_level_deflt  = 1.0;  # add spam info headers if at, or above that level"
+    - line: "$sa_tag_level_deflt  = 2.0;  # add spam info headers if at, or above that level"
       regexp: '^\$sa_tag_level_deflt  ='
-    - line: "$sa_tag2_level_deflt = 5.0;  # add 'spam detected' headers at that level"
+    - line: "$sa_tag2_level_deflt = 6.2;  # add 'spam detected' headers at that level"
       regexp: '^\$sa_tag2_level_deflt ='
-    - line: "$sa_kill_level_deflt = 4.0;  # triggers spam evasive actions (e.g. blocks mail)"
+    - line: "$sa_kill_level_deflt = 6.9;  # triggers spam evasive actions (e.g. blocks mail)"
       regexp: '^\$sa_kill_level_deflt ='
     - line: "$final_banned_destiny     = D_DISCARD;"
       regexp: '^\$final_banned_destiny     ='
@@ -42,12 +42,9 @@
     line: "required_hits 4"
     regexp: "^required_hits"
     path: /etc/mail/spamassassin/local.cf
-- name: set fact local_cf_content
-  set_fact:
-    local_cf_content: "{{ lookup('template', 'spamassassin/local.cf.j2') }}"
 - name: configure spamassassin local.cf (additions)
   blockinfile:
-    content: '{{ local_cf_content }}'
+    block: "{{ lookup('template', 'spamassassin/local.cf.j2') }}"
     path: /etc/mail/spamassassin/local.cf
 - name: spamassassin configuration files
   copy:
@@ -114,7 +111,6 @@
       smtp    inet    n       -       n       -       20      smtpd
               -o smtpd_proxy_filter=127.0.0.1:10024
               -o smtpd_client_connection_count_limit=10
-              -o smtpd_client_restrictions=$override_smtpd_client_restrictions
       0.0.0.0:10025 inet n  -       n       -        -      smtpd
               -o smtpd_authorized_xforward_hosts=127.0.0.0/8
               -o smtpd_client_restrictions=
@@ -128,13 +124,10 @@
   template:
     src: postfix/virtual.regexp.j2
     dest: /etc/postfix/virtual.regexp
-- name: set fact revaliases
-  set_fact:
-    revaliases_content: "{{ lookup('template', 'ssmtp/revaliases.j2') }}"
 - name: set ssmtp revaliases
   blockinfile:
     path: /etc/ssmtp/revaliases
-    content: "{{ revaliases_content }}"
+    block: "{{ lookup('template', 'ssmtp/revaliases.j2') }}"
 - name: modify ssmtp.conf
   lineinfile:
     path: /etc/ssmtp/ssmtp.conf
@@ -160,3 +153,4 @@
   alternatives:
     name: mta
     path: /usr/sbin/sendmail.ssmtp
+# TO DO add amavis learn
